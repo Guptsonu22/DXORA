@@ -47,6 +47,52 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    def is_platform_configured(self, platform: str) -> bool:
+        """Check whether credentials for given platform identifier are configured."""
+        platform_lower = platform.lower()
+        if platform_lower == "twitter":
+            return bool(self.TWITTER_API_KEY and self.TWITTER_ACCESS_TOKEN)
+        if platform_lower == "linkedin":
+            return bool(self.LINKEDIN_ACCESS_TOKEN)
+        if platform_lower == "telegram":
+            return bool(self.TELEGRAM_BOT_TOKEN and self.TELEGRAM_CHAT_ID)
+        if platform_lower == "discord":
+            return bool(self.DISCORD_WEBHOOK_URL)
+        if platform_lower == "reddit":
+            return bool(self.REDDIT_CLIENT_ID and self.REDDIT_CLIENT_SECRET)
+        return False
+
+    def get_masked_credentials(self) -> dict[str, dict[str, str | bool]]:
+        """Return safe, non-sensitive credential report for telemetry."""
+        from autopost_nexus.adapters.exceptions import mask_sensitive_string
+
+        return {
+            "twitter": {
+                "configured": self.is_platform_configured("twitter"),
+                "api_key": mask_sensitive_string(self.TWITTER_API_KEY),
+                "access_token": mask_sensitive_string(self.TWITTER_ACCESS_TOKEN),
+            },
+            "linkedin": {
+                "configured": self.is_platform_configured("linkedin"),
+                "access_token": mask_sensitive_string(self.LINKEDIN_ACCESS_TOKEN),
+                "author_urn": self.LINKEDIN_AUTHOR_URN or "None",
+            },
+            "telegram": {
+                "configured": self.is_platform_configured("telegram"),
+                "bot_token": mask_sensitive_string(self.TELEGRAM_BOT_TOKEN),
+                "chat_id": self.TELEGRAM_CHAT_ID or "None",
+            },
+            "discord": {
+                "configured": self.is_platform_configured("discord"),
+                "webhook_url": mask_sensitive_string(self.DISCORD_WEBHOOK_URL),
+            },
+            "reddit": {
+                "configured": self.is_platform_configured("reddit"),
+                "client_id": mask_sensitive_string(self.REDDIT_CLIENT_ID),
+                "username": self.REDDIT_USERNAME or "None",
+            },
+        }
+
 
 @lru_cache
 def get_settings() -> Settings:
