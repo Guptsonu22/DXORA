@@ -14,6 +14,7 @@ class PlatformType(str, Enum):
     TELEGRAM = "telegram"
     DISCORD = "discord"
     REDDIT = "reddit"
+    BLUESKY = "bluesky"
 
 
 class PostStatus(str, Enum):
@@ -44,6 +45,7 @@ PLATFORM_LIMITS = {
     PlatformType.TELEGRAM: 4096,
     PlatformType.DISCORD: 2000,
     PlatformType.REDDIT: 40000,
+    PlatformType.BLUESKY: 300,
 }
 
 
@@ -150,6 +152,14 @@ class PostingCreateRequest(BaseModel):
             if content_len > max_linkedin:
                 raise ValueError(
                     f"Content exceeds LinkedIn limit of {max_linkedin} characters (received {content_len})."
+                )
+
+        # Bluesky character limit check (300 graphemes)
+        if PlatformType.BLUESKY in self.platforms:
+            max_bluesky = PLATFORM_LIMITS[PlatformType.BLUESKY]
+            if content_len > max_bluesky:
+                raise ValueError(
+                    f"Content exceeds Bluesky limit of {max_bluesky} characters (received {content_len})."
                 )
 
         # Reddit requires a title

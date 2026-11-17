@@ -89,6 +89,13 @@ class PostingService:
                 auth_mode="OAuth 2.0 Password Grant",
                 status="ready" if self.settings.REDDIT_CLIENT_ID else "unconfigured",
             ),
+            "bluesky": PlatformConfigStatus(
+                configured=bool(
+                    self.settings.BLUESKY_HANDLE and self.settings.BLUESKY_APP_PASSWORD
+                ),
+                auth_mode="AT Protocol XRPC (App Password)",
+                status="ready" if self.settings.BLUESKY_HANDLE else "unconfigured",
+            ),
         }
 
         # Overall health assessment

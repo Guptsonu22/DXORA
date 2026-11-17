@@ -30,6 +30,7 @@ async def test_health_check_returns_200_and_healthy(client: AsyncClient):
     assert "telegram" in platforms
     assert "discord" in platforms
     assert "reddit" in platforms
+    assert "bluesky" in platforms
 
     for p_info in platforms.values():
         assert "configured" in p_info

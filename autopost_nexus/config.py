@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     REDDIT_USERNAME: str | None = None
     REDDIT_PASSWORD: str | None = None
 
+    # Bluesky (AT Protocol) Credentials
+    BLUESKY_HANDLE: str | None = None
+    BLUESKY_APP_PASSWORD: str | None = None
+    BLUESKY_SERVICE_URL: str = "https://bsky.social"
+
     # Resiliency and Limits
     MAX_RETRIES: int = 3
     REQUEST_TIMEOUT_SECONDS: float = 10.0
@@ -60,6 +65,8 @@ class Settings(BaseSettings):
             return bool(self.DISCORD_WEBHOOK_URL)
         if platform_lower == "reddit":
             return bool(self.REDDIT_CLIENT_ID and self.REDDIT_CLIENT_SECRET)
+        if platform_lower == "bluesky":
+            return bool(self.BLUESKY_HANDLE and self.BLUESKY_APP_PASSWORD)
         return False
 
     def get_masked_credentials(self) -> dict[str, dict[str, str | bool]]:
@@ -90,6 +97,12 @@ class Settings(BaseSettings):
                 "configured": self.is_platform_configured("reddit"),
                 "client_id": mask_sensitive_string(self.REDDIT_CLIENT_ID),
                 "username": self.REDDIT_USERNAME or "None",
+            },
+            "bluesky": {
+                "configured": self.is_platform_configured("bluesky"),
+                "handle": self.BLUESKY_HANDLE or "None",
+                "app_password": mask_sensitive_string(self.BLUESKY_APP_PASSWORD),
+                "service_url": self.BLUESKY_SERVICE_URL,
             },
         }
 

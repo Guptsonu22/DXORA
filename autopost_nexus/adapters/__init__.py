@@ -1,6 +1,7 @@
 """Adapters module exports."""
 
 from autopost_nexus.adapters.base import BasePlatformAdapter
+from autopost_nexus.adapters.bluesky import BlueskyAdapter
 from autopost_nexus.adapters.exceptions import (
     PlatformAuthenticationError,
     PlatformContentValidationError,
@@ -26,6 +27,7 @@ from autopost_nexus.adapters.schemas import (
 __all__ = [
     "AdapterRegistry",
     "BasePlatformAdapter",
+    "BlueskyAdapter",
     "MockPlatformAdapter",
     "PlatformAuthenticationError",
     "PlatformContentValidationError",
