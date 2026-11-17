@@ -96,6 +96,11 @@ class PostingService:
                 auth_mode="AT Protocol XRPC (App Password)",
                 status="ready" if self.settings.BLUESKY_HANDLE else "unconfigured",
             ),
+            "mastodon": PlatformConfigStatus(
+                configured=bool(self.settings.MASTODON_ACCESS_TOKEN),
+                auth_mode="OAuth 2.0 Bearer Token",
+                status="ready" if self.settings.MASTODON_ACCESS_TOKEN else "unconfigured",
+            ),
         }
 
         # Overall health assessment

@@ -110,12 +110,13 @@ class PlatformContentValidationError(PlatformError):
         self,
         platform: PlatformType,
         message: str,
+        status_code: int = 400,
         response_body: str | None = None,
     ):
         super().__init__(
             platform=platform,
             message=message,
-            status_code=400,
+            status_code=status_code,
             response_body=response_body,
             retryable=False,  # Content must be edited by user before re-attempting
         )

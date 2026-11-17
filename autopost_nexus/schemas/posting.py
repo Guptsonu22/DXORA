@@ -15,6 +15,7 @@ class PlatformType(str, Enum):
     DISCORD = "discord"
     REDDIT = "reddit"
     BLUESKY = "bluesky"
+    MASTODON = "mastodon"
 
 
 class PostStatus(str, Enum):
@@ -46,6 +47,7 @@ PLATFORM_LIMITS = {
     PlatformType.DISCORD: 2000,
     PlatformType.REDDIT: 40000,
     PlatformType.BLUESKY: 300,
+    PlatformType.MASTODON: 500,
 }
 
 
@@ -160,6 +162,14 @@ class PostingCreateRequest(BaseModel):
             if content_len > max_bluesky:
                 raise ValueError(
                     f"Content exceeds Bluesky limit of {max_bluesky} characters (received {content_len})."
+                )
+
+        # Mastodon character limit check (500 chars)
+        if PlatformType.MASTODON in self.platforms:
+            max_mastodon = PLATFORM_LIMITS[PlatformType.MASTODON]
+            if content_len > max_mastodon:
+                raise ValueError(
+                    f"Content exceeds Mastodon limit of {max_mastodon} characters (received {content_len})."
                 )
 
         # Reddit requires a title

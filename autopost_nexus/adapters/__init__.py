@@ -14,6 +14,7 @@ from autopost_nexus.adapters.exceptions import (
     mask_sensitive_string,
     parse_retry_after,
 )
+from autopost_nexus.adapters.mastodon import MastodonAdapter
 from autopost_nexus.adapters.mock_adapter import MockPlatformAdapter
 from autopost_nexus.adapters.registry import AdapterRegistry, get_adapter_registry
 from autopost_nexus.adapters.schemas import (
@@ -28,6 +29,7 @@ __all__ = [
     "AdapterRegistry",
     "BasePlatformAdapter",
     "BlueskyAdapter",
+    "MastodonAdapter",
     "MockPlatformAdapter",
     "PlatformAuthenticationError",
     "PlatformContentValidationError",

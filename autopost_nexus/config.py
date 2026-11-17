@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     BLUESKY_APP_PASSWORD: str | None = None
     BLUESKY_SERVICE_URL: str = "https://bsky.social"
 
+    # Mastodon (Fediverse) Credentials
+    MASTODON_ACCESS_TOKEN: str | None = None
+    MASTODON_INSTANCE_URL: str = "https://mastodon.social"
+
     # Resiliency and Limits
     MAX_RETRIES: int = 3
     REQUEST_TIMEOUT_SECONDS: float = 10.0
@@ -67,6 +71,8 @@ class Settings(BaseSettings):
             return bool(self.REDDIT_CLIENT_ID and self.REDDIT_CLIENT_SECRET)
         if platform_lower == "bluesky":
             return bool(self.BLUESKY_HANDLE and self.BLUESKY_APP_PASSWORD)
+        if platform_lower == "mastodon":
+            return bool(self.MASTODON_ACCESS_TOKEN)
         return False
 
     def get_masked_credentials(self) -> dict[str, dict[str, str | bool]]:
@@ -103,6 +109,11 @@ class Settings(BaseSettings):
                 "handle": self.BLUESKY_HANDLE or "None",
                 "app_password": mask_sensitive_string(self.BLUESKY_APP_PASSWORD),
                 "service_url": self.BLUESKY_SERVICE_URL,
+            },
+            "mastodon": {
+                "configured": self.is_platform_configured("mastodon"),
+                "access_token": mask_sensitive_string(self.MASTODON_ACCESS_TOKEN),
+                "instance_url": self.MASTODON_INSTANCE_URL,
             },
         }
 
