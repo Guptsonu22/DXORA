@@ -56,50 +56,32 @@ class PostingService:
         connected, dialect, latency_ms, error = await check_db_health()
         uptime = round(time.time() - START_TIME, 2)
 
-        # Platform configuration matrix
+        # Platform configuration matrix — five master-prompt platforms
         platforms: dict[str, PlatformConfigStatus] = {
-            "twitter": PlatformConfigStatus(
-                configured=bool(
-                    self.settings.TWITTER_API_KEY and self.settings.TWITTER_ACCESS_TOKEN
-                ),
-                auth_mode="OAuth 1.0a / Bearer v2",
-                status="ready" if self.settings.TWITTER_API_KEY else "unconfigured",
-            ),
-            "linkedin": PlatformConfigStatus(
-                configured=bool(self.settings.LINKEDIN_ACCESS_TOKEN),
-                auth_mode="OAuth 2.0 Bearer",
-                status="ready" if self.settings.LINKEDIN_ACCESS_TOKEN else "unconfigured",
-            ),
-            "telegram": PlatformConfigStatus(
-                configured=bool(
-                    self.settings.TELEGRAM_BOT_TOKEN and self.settings.TELEGRAM_CHAT_ID
-                ),
-                auth_mode="Bot Token",
-                status="ready" if self.settings.TELEGRAM_BOT_TOKEN else "unconfigured",
-            ),
-            "discord": PlatformConfigStatus(
-                configured=bool(self.settings.DISCORD_WEBHOOK_URL),
-                auth_mode="Webhook URL",
-                status="ready" if self.settings.DISCORD_WEBHOOK_URL else "unconfigured",
-            ),
-            "reddit": PlatformConfigStatus(
-                configured=bool(
-                    self.settings.REDDIT_CLIENT_ID and self.settings.REDDIT_CLIENT_SECRET
-                ),
-                auth_mode="OAuth 2.0 Password Grant",
-                status="ready" if self.settings.REDDIT_CLIENT_ID else "unconfigured",
-            ),
             "bluesky": PlatformConfigStatus(
-                configured=bool(
-                    self.settings.BLUESKY_HANDLE and self.settings.BLUESKY_APP_PASSWORD
-                ),
+                configured=self.settings.is_platform_configured("bluesky"),
                 auth_mode="AT Protocol XRPC (App Password)",
-                status="ready" if self.settings.BLUESKY_HANDLE else "unconfigured",
+                status="ready" if self.settings.is_platform_configured("bluesky") else "unconfigured",
             ),
             "mastodon": PlatformConfigStatus(
-                configured=bool(self.settings.MASTODON_ACCESS_TOKEN),
+                configured=self.settings.is_platform_configured("mastodon"),
                 auth_mode="OAuth 2.0 Bearer Token",
-                status="ready" if self.settings.MASTODON_ACCESS_TOKEN else "unconfigured",
+                status="ready" if self.settings.is_platform_configured("mastodon") else "unconfigured",
+            ),
+            "devto": PlatformConfigStatus(
+                configured=self.settings.is_platform_configured("devto"),
+                auth_mode="API Key Header",
+                status="ready" if self.settings.is_platform_configured("devto") else "unconfigured",
+            ),
+            "wordpress": PlatformConfigStatus(
+                configured=self.settings.is_platform_configured("wordpress"),
+                auth_mode="HTTP Basic (Application Password)",
+                status="ready" if self.settings.is_platform_configured("wordpress") else "unconfigured",
+            ),
+            "telegram": PlatformConfigStatus(
+                configured=self.settings.is_platform_configured("telegram"),
+                auth_mode="Bot Token",
+                status="ready" if self.settings.is_platform_configured("telegram") else "unconfigured",
             ),
         }
 

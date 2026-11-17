@@ -250,17 +250,33 @@ class MastodonAdapter(BasePlatformAdapter):
 
     @staticmethod
     def _parse_mastodon_rate_limit(response: httpx.Response) -> float:
-        """Parse Retry-After or X-RateLimit-Reset headers for cooldown duration."""
-        # Check standard Retry-After first
+        """Parse Retry-After or X-RateLimit-Reset headers for cooldown duration.
+
+        Per the official Mastodon API docs (docs.joinmastodon.org/api/rate-limits):
+        - Standard `Retry-After` header: integer seconds to wait.
+        - `X-RateLimit-Reset`: ISO 8601 datetime string when the window resets.
+          Example: "2019-12-02T12:00:00.000Z"
+        """
+        # 1. Standard Retry-After header (highest precedence)
         retry_after = response.headers.get("Retry-After")
         if retry_after:
             return parse_retry_after(retry_after)
 
-        # Check Mastodon X-RateLimit-Reset (ISO 8601 or UNIX timestamp)
+        # 2. Mastodon-native X-RateLimit-Reset (ISO 8601 datetime per official docs)
         reset_header = response.headers.get("X-RateLimit-Reset")
         if reset_header:
+            # Try ISO 8601 datetime first (official Mastodon format)
             try:
-                # Unix timestamp
+                from datetime import UTC, datetime
+
+                reset_dt = datetime.fromisoformat(reset_header)
+                now_dt = datetime.now(UTC)
+                delta = (reset_dt - now_dt).total_seconds()
+                return max(round(delta, 1), 1.0)
+            except (ValueError, TypeError):
+                pass
+            # Fallback: Unix timestamp (some older Mastodon forks)
+            try:
                 reset_ts = float(reset_header)
                 now_ts = time.time()
                 delta = reset_ts - now_ts

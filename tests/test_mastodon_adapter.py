@@ -2,7 +2,8 @@
 
 Validates OAuth 2.0 Bearer token authentication, status publishing,
 public visibility, idempotency keys, permalink extraction, rate limiting,
-error handling, and account verification health checks.
+error handling, X-RateLimit-Reset ISO 8601 parsing, and account verification
+health checks — all aligned with docs.joinmastodon.org/methods/statuses/.
 """
 
 import httpx
@@ -150,8 +151,34 @@ async def test_publish_status_with_spoiler_and_custom_idempotency_key(
     assert "Spoiler Alert / Major Feature" in sent_body
 
 
+@pytest.mark.asyncio
+@respx.mock
+async def test_publish_uses_uri_fallback_when_url_absent(mastodon_adapter: MastodonAdapter):
+    """Verify permalink falls back to 'uri' field when 'url' is not present in response.
+
+    Per Mastodon API spec: 'url' is the public link, 'uri' is the ActivityPub URI.
+    Some Mastodon forks / Pleroma instances may omit 'url'.
+    """
+    respx.post("https://mastodon.social/api/v1/statuses").respond(
+        status_code=200,
+        json={
+            "id": "222953284920194822",
+            "uri": "https://mastodon.social/users/dxoratech/statuses/222953284920194822",
+            # 'url' intentionally absent to test fallback
+        },
+    )
+
+    payload = PlatformPostPayload(content="Testing URI fallback for permalink extraction.")
+    result = await mastodon_adapter.publish(payload)
+
+    assert result.success is True
+    assert result.external_post_id == "222953284920194822"
+    # Should use uri as fallback
+    assert "222953284920194822" in result.external_url
+
+
 # ---------------------------------------------------------------------------
-# 3. Error Handling Tests (401, 422, 429, 503, Network Timeout)
+# 3. Error Handling Tests (401, 403, 422, 429, 503, Network Timeout)
 # ---------------------------------------------------------------------------
 
 
@@ -175,6 +202,23 @@ async def test_publish_auth_error_401(mastodon_adapter: MastodonAdapter):
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_publish_auth_error_403(mastodon_adapter: MastodonAdapter):
+    """Verify HTTP 403 Forbidden raises PlatformAuthenticationError (insufficient scope)."""
+    respx.post("https://mastodon.social/api/v1/statuses").respond(
+        status_code=403,
+        json={"error": "This action is not allowed"},
+    )
+
+    payload = PlatformPostPayload(content="Forbidden action test")
+    with pytest.raises(PlatformAuthenticationError) as exc_info:
+        await mastodon_adapter.publish(payload)
+
+    assert exc_info.value.retryable is False
+    assert exc_info.value.status_code == 403
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_publish_validation_error_422(mastodon_adapter: MastodonAdapter):
     """Verify HTTP 422 raises PlatformContentValidationError with retryable=False."""
     respx.post("https://mastodon.social/api/v1/statuses").respond(
@@ -193,7 +237,7 @@ async def test_publish_validation_error_422(mastodon_adapter: MastodonAdapter):
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_publish_rate_limit_error_429(mastodon_adapter: MastodonAdapter):
+async def test_publish_rate_limit_error_429_with_retry_after(mastodon_adapter: MastodonAdapter):
     """Verify HTTP 429 raises PlatformRateLimitError with Retry-After parsed."""
     respx.post("https://mastodon.social/api/v1/statuses").respond(
         status_code=429,
@@ -208,6 +252,37 @@ async def test_publish_rate_limit_error_429(mastodon_adapter: MastodonAdapter):
     assert exc_info.value.retryable is True
     assert exc_info.value.status_code == 429
     assert exc_info.value.retry_after_seconds == 30.0
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_publish_rate_limit_x_ratelimit_reset_iso8601(mastodon_adapter: MastodonAdapter):
+    """Verify X-RateLimit-Reset ISO 8601 datetime is correctly parsed for cooldown.
+
+    Per official Mastodon API docs: X-RateLimit-Reset is an ISO 8601 datetime string
+    (e.g. '2026-11-17T17:00:00.000Z'), not a Unix timestamp.
+    """
+    # Set reset time to 60 seconds in the future
+    from datetime import UTC, datetime, timedelta
+
+    future_reset = (datetime.now(UTC) + timedelta(seconds=60)).strftime(
+        "%Y-%m-%dT%H:%M:%S.000Z"
+    )
+
+    respx.post("https://mastodon.social/api/v1/statuses").respond(
+        status_code=429,
+        headers={"X-RateLimit-Reset": future_reset},
+        json={"error": "Rate limit exceeded"},
+    )
+
+    payload = PlatformPostPayload(content="Rate limit ISO 8601 test")
+    with pytest.raises(PlatformRateLimitError) as exc_info:
+        await mastodon_adapter.publish(payload)
+
+    assert exc_info.value.retryable is True
+    # Cooldown should be approximately 60 seconds (allow ±5s tolerance)
+    assert exc_info.value.retry_after_seconds is not None
+    assert 55.0 <= exc_info.value.retry_after_seconds <= 65.0
 
 
 @pytest.mark.asyncio
@@ -268,7 +343,7 @@ async def test_execute_safe_publish_converts_error_to_failure(mastodon_adapter: 
 
 
 def test_mastodon_content_length_validation(mastodon_adapter: MastodonAdapter):
-    """Verify character limit (500 characters)."""
+    """Verify character limit (500 characters per official Mastodon default)."""
     valid_payload = PlatformPostPayload(content="M" * 500)
     assert mastodon_adapter.validate_content(valid_payload).is_valid is True
 
@@ -309,3 +384,18 @@ async def test_mastodon_health_check_unconfigured():
     assert health.is_healthy is False
     assert health.is_configured is False
     assert "not configured" in health.details
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_mastodon_health_check_auth_failure(mastodon_adapter: MastodonAdapter):
+    """Verify health check detects invalid token (HTTP 401 on verify_credentials)."""
+    respx.get("https://mastodon.social/api/v1/accounts/verify_credentials").respond(
+        status_code=401,
+        json={"error": "The access token is invalid"},
+    )
+
+    health = await mastodon_adapter.check_health()
+    assert health.is_healthy is False
+    assert health.is_configured is True
+    assert "401" in health.details

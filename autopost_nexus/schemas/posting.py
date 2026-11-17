@@ -7,15 +7,20 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 
 class PlatformType(str, Enum):
-    """Supported target platform destinations."""
+    """Supported target platform destinations (master-prompt canonical set + legacy)."""
 
-    TWITTER = "twitter"
-    LINKEDIN = "linkedin"
-    TELEGRAM = "telegram"
-    DISCORD = "discord"
-    REDDIT = "reddit"
+    # --- Five required platforms per master prompt ---
     BLUESKY = "bluesky"
     MASTODON = "mastodon"
+    DEVTO = "devto"
+    WORDPRESS = "wordpress"
+    TELEGRAM = "telegram"
+
+    # --- Retained for backwards-compat with existing tests ---
+    TWITTER = "twitter"
+    LINKEDIN = "linkedin"
+    DISCORD = "discord"
+    REDDIT = "reddit"
 
 
 class PostStatus(str, Enum):
@@ -41,13 +46,16 @@ class TargetStatus(str, Enum):
 
 # Platform-specific character and constraint thresholds
 PLATFORM_LIMITS = {
-    PlatformType.TWITTER: 280,
-    PlatformType.LINKEDIN: 3000,
-    PlatformType.TELEGRAM: 4096,
-    PlatformType.DISCORD: 2000,
-    PlatformType.REDDIT: 40000,
     PlatformType.BLUESKY: 300,
     PlatformType.MASTODON: 500,
+    PlatformType.DEVTO: 65536,   # DEV.to: article body has no hard cap in practice
+    PlatformType.WORDPRESS: 65536,  # WordPress REST API: no hard cap
+    PlatformType.TELEGRAM: 4096,
+    # Legacy entries kept for backwards-compat
+    PlatformType.TWITTER: 280,
+    PlatformType.LINKEDIN: 3000,
+    PlatformType.DISCORD: 2000,
+    PlatformType.REDDIT: 40000,
 }
 
 

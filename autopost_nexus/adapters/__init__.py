@@ -2,6 +2,7 @@
 
 from autopost_nexus.adapters.base import BasePlatformAdapter
 from autopost_nexus.adapters.bluesky import BlueskyAdapter
+from autopost_nexus.adapters.devto import DevtoAdapter
 from autopost_nexus.adapters.exceptions import (
     PlatformAuthenticationError,
     PlatformContentValidationError,
@@ -29,6 +30,7 @@ __all__ = [
     "AdapterRegistry",
     "BasePlatformAdapter",
     "BlueskyAdapter",
+    "DevtoAdapter",
     "MastodonAdapter",
     "MockPlatformAdapter",
     "PlatformAuthenticationError",
