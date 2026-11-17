@@ -25,6 +25,7 @@ from autopost_nexus.adapters.schemas import (
     PublishFailure,
     PublishResult,
 )
+from autopost_nexus.adapters.wordpress import WordPressAdapter
 
 __all__ = [
     "AdapterRegistry",
@@ -45,6 +46,7 @@ __all__ = [
     "PlatformValidationResult",
     "PublishFailure",
     "PublishResult",
+    "WordPressAdapter",
     "get_adapter_registry",
     "map_http_response_to_exception",
     "mask_sensitive_string",

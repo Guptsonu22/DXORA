@@ -91,7 +91,7 @@ def test_format_article_explicit_title(devto_adapter: DevtoAdapter):
         title="Breaking Tech News for Developers",
         content="Our new automation framework is live at https://dxora.tech/nexus #python #webdev",
     )
-    title, body, canonical_url, _tags = devto_adapter.format_article(payload)
+    title, body, canonical_url, tags = devto_adapter.format_article(payload)
 
     assert title == "Breaking Tech News for Developers"
     assert "Our new automation framework is live" in body
