@@ -34,19 +34,19 @@ ENV/
 env.bak/
 venv.bak/
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Test & Coverage
+# Testing & Coverage
 .pytest_cache/
 .coverage
 htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# Local runner shims
+# Local runner shims (Windows execution environment)
 powershell.cmd
 python.cmd
 pytest.cmd
+
+# SQLite databases (if any)
+*.db
+*.sqlite
+*.sqlite3
