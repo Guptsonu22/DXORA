@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autopost-nexus"
+version = "1.0.0"
+description = "Automated Multi-Platform Posting System for Dxora Technologies Practical Test"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "sqlalchemy[asyncio]>=2.0.35",
+    "greenlet>=3.1.0",
+    "aiosqlite>=0.20.0",
+    "httpx>=0.27.0",
+    "apscheduler>=3.10.4",
+    "typer>=0.12.5",
+    "rich>=13.8.0",
+    "python-multipart>=0.0.12",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = [
+    "B008",   # Do not perform function call `Depends` in argument defaults (FastAPI design)
+    "BLE001", # Do not catch blind exception `Exception` (needed for generic DB ping probe)
+]
