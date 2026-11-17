@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     # Bot Token: @BotFather | Channel ID: @username or -100xxxxxxxxxx
     TELEGRAM_BOT_TOKEN: str | None = None
     TELEGRAM_CHANNEL_ID: str | None = None
+    TELEGRAM_API_BASE: str = "https://api.telegram.org"
 
     # ===========================================================================
     # Legacy / Extra Platform Credentials (kept for backwards-compat with tests)
