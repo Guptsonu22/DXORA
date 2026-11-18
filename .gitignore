@@ -46,6 +46,9 @@ powershell.cmd
 python.cmd
 pytest.cmd
 
+# Master prompt working reference
+master_prompt_complete.txt
+
 # SQLite databases (if any)
 *.db
 *.sqlite

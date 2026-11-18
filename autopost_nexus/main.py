@@ -11,7 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from autopost_nexus.config import get_settings
 from autopost_nexus.db.session import get_db, init_db
 from autopost_nexus.schemas.health import HealthResponse
-from autopost_nexus.schemas.posting import PostingCreateRequest, PostingResponse
+from autopost_nexus.schemas.posting import (
+    PostingCreateRequest,
+    PostingResponse,
+    StandardPostingRequest,
+    StandardPostingResponse,
+)
+from autopost_nexus.services.central_posting_service import CentralPostingService
 from autopost_nexus.services.posting_service import PostingService
 
 settings = get_settings()
@@ -96,30 +102,35 @@ async def health_check(
 
 @app.post(
     "/posting",
-    response_model=PostingResponse,
+    response_model=StandardPostingResponse | PostingResponse,
     tags=["Posting Operations"],
-    summary="Create and dispatch or schedule a post",
+    summary="Create and dispatch or broadcast a post",
     description=(
-        "Validate content constraints against target platforms, create post records, "
-        "and dispatch across specified channels. Supports client-supplied idempotency key."
+        "Validate content constraints and publish across target platforms. "
+        "Supports standard single-business request format (message with single CTA URL) "
+        "or legacy targeted platform request."
     ),
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     responses={
-        200: {"description": "Existing post replayed via idempotency key"},
-        201: {"description": "Post successfully validated and created"},
+        200: {"description": "Posting completed or replayed"},
+        201: {"description": "Legacy post successfully validated and created"},
         422: {
             "description": "Validation error (character limits, invalid platform, missing fields)"
         },
     },
 )
 async def create_posting(
-    payload: PostingCreateRequest,
+    payload: StandardPostingRequest | PostingCreateRequest,
     response: Response,
     idempotency_key_header: str | None = Header(None, alias="Idempotency-Key"),
     db: AsyncSession = Depends(get_db),
-) -> PostingResponse:
-    """Validate and persist a multi-platform post request."""
-    # Use header idempotency key if body did not specify one
+) -> StandardPostingResponse | PostingResponse:
+    """Validate and dispatch a multi-platform post request."""
+    if isinstance(payload, StandardPostingRequest):
+        service = CentralPostingService(settings=settings)
+        return await service.broadcast(payload.message)
+
+    # Legacy Phase 2 flow
     if idempotency_key_header and not payload.idempotency_key:
         payload.idempotency_key = idempotency_key_header
 
@@ -129,5 +140,7 @@ async def create_posting(
     if is_replay:
         response.status_code = status.HTTP_200_OK
         response.headers["X-Idempotent-Replay"] = "true"
+    else:
+        response.status_code = status.HTTP_201_CREATED
 
     return result

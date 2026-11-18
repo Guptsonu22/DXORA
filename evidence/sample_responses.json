@@ -1,0 +1,240 @@
+{
+  "scenarios": {
+    "1_complete_success": {
+      "description": "All five platforms published successfully with confirmed public URLs and UTC timestamps.",
+      "request": {
+        "url": "POST http://localhost:4000/posting",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "message": "Check out our latest business platform and grow your online visibility. https://example.com"
+        }
+      },
+      "http_status": 200,
+      "response": {
+        "success": true,
+        "message": "Posting completed successfully across all platforms",
+        "total_platforms": 5,
+        "successful": 5,
+        "failed": 0,
+        "results": [
+          {
+            "platform": "Bluesky",
+            "status": "success",
+            "posted_url": "https://bsky.app/profile/user.bsky.social/post/3k123456789",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "14:30:00",
+            "error": null
+          },
+          {
+            "platform": "Mastodon",
+            "status": "success",
+            "posted_url": "https://mastodon.social/@user/112233445566",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "14:30:01",
+            "error": null
+          },
+          {
+            "platform": "DEV.to",
+            "status": "success",
+            "posted_url": "https://dev.to/user/post-launch-title-abc",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "14:30:02",
+            "error": null
+          },
+          {
+            "platform": "WordPress",
+            "status": "success",
+            "posted_url": "https://mysite.com/2026/11/post-launch-title/",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "14:30:03",
+            "error": null
+          },
+          {
+            "platform": "Telegram",
+            "status": "success",
+            "posted_url": "https://t.me/dxora_channel/789",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "14:30:04",
+            "error": null
+          }
+        ]
+      }
+    },
+    "2_partial_failure": {
+      "description": "3 platforms succeeded, 1 failed due to auth error, 1 unconfigured. Fault isolation guaranteed.",
+      "request": {
+        "url": "POST http://localhost:4000/posting",
+        "body": {
+          "message": "Announcement: New feature release live today! https://example.com/features"
+        }
+      },
+      "http_status": 200,
+      "response": {
+        "success": true,
+        "message": "Posting completed",
+        "total_platforms": 5,
+        "successful": 3,
+        "failed": 2,
+        "results": [
+          {
+            "platform": "Bluesky",
+            "status": "success",
+            "posted_url": "https://bsky.app/profile/user.bsky.social/post/3k987654321",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "14:35:10",
+            "error": null
+          },
+          {
+            "platform": "Mastodon",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Authentication failed (HTTP 401): Invalid OAuth access token"
+          },
+          {
+            "platform": "DEV.to",
+            "status": "success",
+            "posted_url": "https://dev.to/user/announcement-new-feature-release-xyz",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "14:35:12",
+            "error": null
+          },
+          {
+            "platform": "WordPress",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Platform 'wordpress' is not configured with valid credentials."
+          },
+          {
+            "platform": "Telegram",
+            "status": "success",
+            "posted_url": "https://t.me/dxora_channel/790",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "14:35:14",
+            "error": null
+          }
+        ]
+      }
+    },
+    "3_total_failure": {
+      "description": "All 5 platforms unconfigured or failing. Returns success=False per Part 7.",
+      "request": {
+        "url": "POST http://localhost:4000/posting",
+        "body": {
+          "message": "Check our platform https://example.com"
+        }
+      },
+      "http_status": 200,
+      "response": {
+        "success": false,
+        "message": "Posting failed across all platforms",
+        "total_platforms": 5,
+        "successful": 0,
+        "failed": 5,
+        "results": [
+          {
+            "platform": "Bluesky",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Platform 'bluesky' is not configured with valid credentials."
+          },
+          {
+            "platform": "Mastodon",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Platform 'mastodon' is not configured with valid credentials."
+          },
+          {
+            "platform": "DEV.to",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Platform 'devto' is not configured with valid credentials."
+          },
+          {
+            "platform": "WordPress",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Platform 'wordpress' is not configured with valid credentials."
+          },
+          {
+            "platform": "Telegram",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Platform 'telegram' is not configured with valid credentials."
+          }
+        ]
+      }
+    },
+    "4_validation_error_forbidden_platform_selection": {
+      "description": "Client attempts to select platforms. Extra fields strictly forbidden with HTTP 422.",
+      "request": {
+        "url": "POST http://localhost:4000/posting",
+        "body": {
+          "message": "Valid text https://example.com",
+          "platforms": ["twitter", "telegram"]
+        }
+      },
+      "http_status": 422,
+      "response": {
+        "detail": [
+          {
+            "type": "extra_forbidden",
+            "loc": ["body", "platforms"],
+            "msg": "Extra inputs are not permitted",
+            "input": ["twitter", "telegram"]
+          }
+        ]
+      }
+    },
+    "5_validation_error_missing_url": {
+      "description": "Message without CTA URL rejected with HTTP 422.",
+      "request": {
+        "url": "POST http://localhost:4000/posting",
+        "body": {
+          "message": "A message without any Call to Action link"
+        }
+      },
+      "http_status": 422,
+      "response": {
+        "detail": [
+          {
+            "type": "value_error",
+            "loc": ["body", "message"],
+            "msg": "Value error, Message must contain exactly one CTA URL (HTTP or HTTPS). None found.",
+            "input": "A message without any Call to Action link"
+          }
+        ]
+      }
+    }
+  }
+}
